@@ -31,12 +31,22 @@ parser.add_option("-r", "--refname", dest="refname",
     help="Git ref Name")
 parser.add_option("-u", "--uploader", dest="uploader",
     help="Gerrit Uploader")
+parser.add_option("--uploader-username", dest="uploader_username",
+    help="Gerrit Uploader User Name", default=None)
 parser.add_option("-o", "--oldrev", dest="oldrev",
     help="GIT old rev")
 parser.add_option("-n", "--newrev", dest="newrev",
     help="GIT new rev")
 
 options, args = parser.parse_args()
+try:
+    idx = sys.argv.index('--topic')
+except ValueError:
+    pass
+else:
+    if sys.argv[idx+1].startswith('--'):
+        sys.argv.insert(idx+1, '')
+        options, args = parser.parse_args()
 
 trac_update = TracGerritTicket(hook_name=sys.argv[0],
                                options=options)

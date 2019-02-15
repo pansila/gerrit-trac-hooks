@@ -30,8 +30,10 @@ from ConfigParser import RawConfigParser
 from subprocess import Popen, PIPE, call
 from datetime import datetime
 
+from trac.env import open_environment
+
 ## regex to find #TICKETNUMBER
-TICKET_RE = re.compile('#([0-9]+)')
+TICKET_RE = re.compile('(?:#|issue|bug|ticket|<)\s*([0-9]+)')
 
 ## remove substring from end of string
 # thanks to http://stackoverflow.com/a/3663505/1922402
@@ -208,15 +210,16 @@ class TracGerritTicket():
 
         self.trac_env = self.config.get_env_for_repo(self.repo_name)
         if not self.trac_env:
+            print("no trac environment setting, exit")
             sys.exit(0)
 
-	if self.trac_env.startswith("http"):
+        if self.trac_env.startswith("http"):
             self.trac_over_rpc = True
         else:
             self.trac_over_rpc = False
             self.env = open_environment(self.trac_env)
 
-        self.hook_name = hook_name
+        self.hook_name = rchop(hook_name, ".py")
         self.debug = debug
 
         self.commit_msg = ""
@@ -333,12 +336,14 @@ class TracGerritTicket():
         msg = "!Repo/Branch: %s/%s\n" \
               "[%s Gerrit Patchset merged]\n\n" \
               "%s\n\n" \
-              "merged by %s" \
+              "merged by %s\n\n" \
+              "Commit-Id: %s" \
               % (self.repo_name,
                  self.options.branch_name,
                  self.options.change_url,
                  self.commit_msg,
-                 self.options.submitter)
+                 self.options.submitter,
+                 self.options.commit)
         return msg
 
     def trac_new_review(self):
@@ -356,7 +361,7 @@ class TracGerritTicket():
         else:
             comment = self.options.comment.split('\n')
             change_url_line = "[%s Comment]\n\n" % self.options.change_url
-            comment_line = "Comment zu %s\n\n%s" % (comment[0],
+            comment_line = "Comment to %s\n\n%s" % (comment[0],
                                                     '\n>'.join(comment[1:]))
         msg = "%s" \
               "%s" \
@@ -371,13 +376,17 @@ class TracGerritTicket():
         correct_change_url = "{0}/c/{1}".format(part_one, part_two)
         msg = "!Repo/Branch: %s/%s\n" \
               "[%s/%s Gerrit Patchset %s]\n\n" \
-              "%s" \
+              "Author: %s\n" \
+              "%s\n\n" \
+              "uploaded by %s\n\n" \
               % (self.repo_name,
                  self.options.branch_name,
                  correct_change_url,
                  self.options.patchset,
                  self.options.patchset,
-                 self.commit_msg)
+                 self.options.change_owner,
+                 self.commit_msg,
+                 self.options.uploader)
         return msg
 
 
@@ -387,7 +396,7 @@ class TracGerritTicket():
                 self.options.is_draft == 'true'):
             return
 
-	if self.trac_over_rpc:
+        if self.trac_over_rpc:
             import xmlrpclib
         else:
             if not (os.path.exists(self.trac_env) and
@@ -473,7 +482,7 @@ class TracGerritTicket():
                         sys.stderr.write('Unexpected error while handling Trac ' \
                                          'ticket ID %s: %s (RPC)' \
                                          % (ticket_id, e))
-                        
+
                 else:
                     try:
                         db = self.env.get_db_cnx()

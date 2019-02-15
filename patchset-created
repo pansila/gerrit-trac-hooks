@@ -35,6 +35,8 @@ parser.add_option("-b", "--branch", dest="branch_name",
     help="Gerrit Branch Name")
 parser.add_option("-l", "--uploader", dest="uploader",
     help="Gerrit Uploader", default=None)
+parser.add_option("--uploader-username", dest="uploader_username",
+    help="Gerrit Uploader User Name", default=None)
 parser.add_option("-c", "--commit", dest="commit",
     help="GIT Commit SHA ID")
 parser.add_option("-u", "--change-url", dest="change_url",
@@ -47,8 +49,18 @@ parser.add_option("-k", "--kind", dest="kind",
     help="Gerrit Change Kind")
 parser.add_option("--change-owner", dest="change_owner",
     help="Gerrit Change Owner")
+parser.add_option("--change-owner-username", dest="change_owner_username",
+    help="Gerrit Change Owner User Name")
 
 options, args = parser.parse_args()
+try:
+    idx = sys.argv.index('--topic')
+except ValueError:
+    pass
+else:
+    if sys.argv[idx+1].startswith('--'):
+        sys.argv.insert(idx+1, '')
+        options, args = parser.parse_args()
 
 # run trac update with hook-name and options
 trac_update = TracGerritTicket(hook_name=sys.argv[0],

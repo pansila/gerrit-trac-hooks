@@ -36,15 +36,27 @@ parser.add_option("-b", "--branch", dest="branch_name",
 parser.add_option("-t", "--topic", dest="topic",
     help="Gerrit topic of Changeset")
 parser.add_option("-s", "--submitter", dest="submitter",
-    help="Gerrit Patchset id")
+    help="Gerrit Submitter")
+parser.add_option("--submitter-username", dest="submitter_username",
+    help="Gerrit Submitter User Name")
 parser.add_option("-c", "--commit", dest="commit",
     help="GIT Commit SHA ID")
 parser.add_option("--change-owner", dest="change_owner",
     help="Gerrit Change Owner")
+parser.add_option("--change-owner-username", dest="change_owner_username",
+    help="Gerrit Change Owner User Name")
 parser.add_option("--newrev", dest="new_rev",
     help="Gerrit New Rev")
 
 options, args = parser.parse_args()
+try:
+    idx = sys.argv.index('--topic')
+except ValueError:
+    pass
+else:
+    if sys.argv[idx+1].startswith('--'):
+        sys.argv.insert(idx+1, '')
+        options, args = parser.parse_args()
 
 # run trac update with hook-name and options
 trac_update = TracGerritTicket(hook_name=sys.argv[0],

@@ -39,6 +39,8 @@ parser.add_option("-t", "--topic", dest="topic",
     help="Gerrit topic of Changeset")
 parser.add_option("-a", "--author", dest="author",
     help="Gerrit Comment Author", default=None)
+parser.add_option("--author-username", dest="author_username",
+    help="Gerrit Comment Author User Name", default=None)
 parser.add_option("-c", "--commit", dest="commit",
     help="GIT Commit SHA ID")
 parser.add_option("-m", "--comment", dest="comment",
@@ -47,6 +49,8 @@ parser.add_option("--Code-Review", dest="review",
     help="Gerrit Review", default=None)
 parser.add_option("--change-owner", dest="change_owner",
     help="Gerrit Change Owner", default=None)
+parser.add_option("--change-owner-username", dest="change_owner_username",
+    help="Gerrit Change Owner User Name")
 parser.add_option("--Verified", dest="verified",
     help="Gerrit Verified", default=None)
 parser.add_option("--Verified-oldValue", dest="verified_oldValue",
@@ -56,6 +60,14 @@ parser.add_option("--Code-Review-oldValue", dest="review_oldValue",
 
 
 options, args = parser.parse_args()
+try:
+    idx = sys.argv.index('--topic')
+except ValueError:
+    pass
+else:
+    if sys.argv[idx+1].startswith('--'):
+        sys.argv.insert(idx+1, '')
+        options, args = parser.parse_args()
 
 # run trac update with hook-name and options
 trac_update = TracGerritTicket(hook_name=sys.argv[0],

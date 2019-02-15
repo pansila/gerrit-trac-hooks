@@ -1,0 +1,1 @@
+python D:\gerrit\site\hooks\comment-added %*
